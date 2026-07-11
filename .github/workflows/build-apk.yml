@@ -45,33 +45,21 @@ jobs:
           buildozer android debug
         timeout-minutes: 120
 
-      - name: Find and upload APK
+      - name: Show results
         if: always()
         run: |
-          echo "=== Searching for APK files ==="
-          find . -name "*.apk" -type f 2>/dev/null
-          echo "=== bin dir ==="
-          ls -la bin/ 2>/dev/null || echo "No bin dir"
-          echo "=== .buildozer dir ==="
-          ls -la .buildozer/ 2>/dev/null || echo "No .buildozer dir"
-        continue-on-error: true
+          echo "=== bin/ ==="
+          ls -la bin/ 2>/dev/null || echo "No bin"
+          echo "=== APK files ==="
+          find . -name "*.apk" -type f 2>/dev/null || echo "No APK"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: nettest-apk
           path: bin/*.apk
           retention-days: 30
-          if-no-files-found: warn
-
-      - name: Upload full log on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: buildozer-log
-          path: |
-            .buildozer/android/platform/build-armeabi-v7a/dists/nettest/.buildozer/log.txt
-            .buildozer/log.txt
           if-no-files-found: warn
 
       - name: Create Release
