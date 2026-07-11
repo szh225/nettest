@@ -40,43 +40,11 @@ jobs:
             git wget curl gcc g++ make file python3-setuptools
           sudo apt-get install -y libc6:i386 libncurses5:i386 libstdc++6:i386 lib32z1 libbz2-1.0:i386
 
-      - name: Install buildozer and patch it
+      - name: Install buildozer and patch
         run: |
           pip install --upgrade pip setuptools wheel
           pip install buildozer==1.5.0
-          
-          # Patch buildozer to skip aidl check (new build-tools don't have aidl anymore)
-          PYTHON_DIR=$(python -c "import site; print(site.getsitepackages()[0])")
-          ANDROID_PY="$PYTHON_DIR/buildozer/targets/android.py"
-          
-          echo "=== Patching android.py ==="
-          python3 -c "
-          import re
-          with open('$ANDROID_PY', 'r') as f:
-              content = f.read()
-          
-          # Replace _check_aidl to be a no-op
-          old_check = '''    def _check_aidl(self, v_build_tools):
-        self.logger.debug('Check that aidl can be executed')
-        v_build_tools = self._read_version_subdir(self.android_sdk_dir,
-                                                  'build-tools')
-        aidl_cmd = join(self.android_sdk_dir, 'build-tools',
-                        str(v_build_tools), 'aidl')
-        buildops.checkbin('Aidl', aidl_cmd)'''
-          
-          new_check = '''    def _check_aidl(self, v_build_tools):
-        self.logger.debug('Check that aidl can be executed - SKIPPED (patched)')
-        return'''
-          
-          content = content.replace(old_check, new_check)
-          
-          with open('$ANDROID_PY', 'w') as f:
-              f.write(content)
-          print('Patch applied successfully')
-          "
-          
-          # Verify patch
-          grep -A2 "_check_aidl" "$ANDROID_PY" | head -5
+          python3 patch_buildozer.py
 
       - name: Build APK
         env:
