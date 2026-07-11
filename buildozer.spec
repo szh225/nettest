@@ -44,10 +44,10 @@ android.maxapi = 33
 android.sdk = 33
 
 # (int) Android NDK version to use
-android.ndk = 25b
+android.ndk = 22b
 
 # (str) The Android arch to build for
-android.archs = arm64-v8a,armeabi-v7a
+android.archs = armeabi-v7a
 
 # (bool) Enables AndroidX support
 android.use_androidx = True
