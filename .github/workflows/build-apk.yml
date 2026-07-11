@@ -28,7 +28,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install system deps
+      - name: Install system deps (including 32-bit libs for aidl)
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
@@ -39,8 +39,8 @@ jobs:
             zlib1g-dev libncurses5-dev libncursesw5-dev \
             libfreetype6-dev libpng-dev libffi-dev liblzma-dev \
             cmake libssl-dev autoconf-archive \
-            git wget curl gcc g++ make file python3-setuptools \
-            # 32-bit libs required by aidl on 64-bit systems
+            git wget curl gcc g++ make file python3-setuptools
+          sudo apt-get install -y \
             libc6:i386 libncurses5:i386 libstdc++6:i386 lib32z1 libbz2-1.0:i386
 
       - name: Install buildozer
