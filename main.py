@@ -2,7 +2,6 @@
 网络测试工具 - 主程序
 """
 from kivy.app import App
-from kivy.utils import platform
 
 
 class NetTestApp(App):
