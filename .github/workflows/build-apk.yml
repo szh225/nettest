@@ -3,58 +3,23 @@ name: Build APK
 on:
   push:
     branches: [ main, master ]
-    paths:
-      - '*.py'
-      - '*.kv'
-      - 'buildozer.spec'
-      - '.github/workflows/*.yml'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build-apk:
+  build:
     name: Build APK
     runs-on: ubuntu-22.04
+    container: ghcr.io/yargs/kivy-build-box:latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Free disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc "/usr/local/share/boost" "$AGENT_TOOLSDIRECTORY"
-          sudo apt-get remove -y '^aspnetcore.*' '^dotnet.*' '^llvm.*' '^php.*' || true
-          df -h /
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            python3-pip python3-venv python3-dev \
-            zip unzip openjdk-17-jdk openjdk-17-jre-headless \
-            autoconf libtool pkg-config \
-            zlib1g-dev libncurses5-dev libncursesw5-dev \
-            libfreetype6-dev libpng-dev libffi-dev liblzma-dev \
-            cmake libssl-dev autoconf-archive \
-            git wget curl gcc g++ make file
-
-      - name: Install Buildozer
-        run: |
-          python3 -m pip install --upgrade pip setuptools wheel
-          pip install buildozer cython
-
       - name: Build APK
-        run: |
-          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-          buildozer android debug
-        timeout-minutes: 90
+        run: buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -63,20 +28,13 @@ jobs:
           path: bin/*.apk
           retention-days: 30
 
-      - name: Upload log on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: .buildozer/log.txt
-
       - name: Create Release
         if: success() && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
           files: bin/*.apk
-          tag_name: apk-${{ github.run_number }}
-          name: "APK #${{ github.run_number }}"
+          tag_name: apk-v${{ github.run_number }}
+          name: "APK v${{ github.run_number }}"
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
