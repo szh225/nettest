@@ -1,0 +1,87 @@
+name: Build APK (b4a-gradle)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build with b4a-gradle
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pip python3-venv python3-dev \
+            zip unzip openjdk-17-jdk \
+            autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            libfreetype6-dev libpng-dev libffi-dev liblzma-dev \
+            cmake libssl-dev autoconf-archive \
+            git wget curl gcc g++ make file python3-setuptools
+
+      - name: Install p4a
+        run: |
+          pip install --upgrade pip setuptools wheel
+          pip install python-for-android
+
+      - name: Create spec
+        run: |
+          p4a apk --bootstrap=sdl2 --requirements=python3,kivy \
+            --package=org.nettest --name="网络测试工具" \
+            --version=1.0.0 --private=$(pwd) \
+            --android-api=33 --min-api=21 \
+            --arch=armeabi-v7a \
+            --permission=INTERNET \
+            --permission=ACCESS_NETWORK_STATE \
+            --permission=ACCESS_WIFI_STATE \
+            --dist_name=nettest \
+            --storage-dir=$(pwd)/.p4a
+
+      - name: Build APK
+        run: |
+          p4a apk --bootstrap=sdl2 --requirements=python3,kivy \
+            --package=org.nettest --name="网络测试工具" \
+            --version=1.0.0 --private=$(pwd) \
+            --android-api=33 --min-api=21 \
+            --arch=armeabi-v7a \
+            --permission=INTERNET \
+            --permission=ACCESS_NETWORK_STATE \
+            --permission=ACCESS_WIFI_STATE \
+            --dist_name=nettest \
+            --storage-dir=$(pwd)/.p4a \
+            --nativerecipes="" \
+            copy_libs
+        timeout-minutes: 120
+
+      - name: Upload APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nettest-apk
+          path: .p4a/binaries/*.apk
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Create Release
+        if: success()
+        uses: softprops/action-gh-release@v1
+        with:
+          files: .p4a/binaries/*.apk
+          tag_name: apk-b4a-${{ github.run_number }}
+          name: "APK (b4a) #${{ github.run_number }}"
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
