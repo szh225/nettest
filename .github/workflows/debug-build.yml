@@ -1,0 +1,50 @@
+name: Debug Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip python3-venv python3-dev \
+            zip unzip openjdk-17-jdk autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            libfreetype6-dev libpng-dev libffi-dev liblzma-dev \
+            cmake libssl-dev autoconf-archive \
+            git wget curl gcc g++ make file python3-setuptools
+
+      - name: Install buildozer
+        run: |
+          pip install --upgrade pip setuptools wheel
+          pip install buildozer
+
+      - name: Run buildozer with full output
+        run: |
+          set -x
+          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+          echo "=== Java version ==="
+          java -version 2>&1
+          echo "=== Buildozer version ==="
+          buildozer --version
+          echo "=== Running buildozer android debug ==="
+          buildozer -v android debug 2>&1 | tee buildozer-full.log || true
+          echo "=== Exit code: $? ==="
+        timeout-minutes: 120
+
+      - name: Upload full log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-build-log
+          path: buildozer-full.log
+          if-no-files-found: warn
