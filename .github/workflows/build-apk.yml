@@ -8,14 +8,7 @@ on:
       - '*.kv'
       - 'buildozer.spec'
       - '.github/workflows/*.yml'
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'App version (e.g., 1.0.0)'
-        required: false
-        default: '1.0.0'
 
 permissions:
   contents: write
@@ -36,103 +29,41 @@ jobs:
 
       - name: Free disk space
         run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          docker system prune -af || true
+          sudo rm -rf /usr/share/dotnet /opt/ghc "/usr/local/share/boost" "$AGENT_TOOLSDIRECTORY"
+          sudo apt-get remove -y '^aspnetcore.*' '^dotnet.*' '^llvm.*' '^php.*' || true
           df -h /
-
-      - name: Cache Buildozer
-        uses: actions/cache@v4
-        with:
-          path: |
-            .buildozer
-            ~/.buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            ${{ runner.os }}-buildozer-
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            python3-pip \
-            python3-venv \
-            python3-dev \
-            zip \
-            unzip \
-            openjdk-17-jdk \
-            openjdk-17-jre \
-            autoconf \
-            libtool \
-            pkg-config \
-            zlib1g-dev \
-            libncurses5-dev \
-            libncursesw5-dev \
-            libfreetype6-dev \
-            libpng-dev \
-            libffi-dev \
-            liblzma-dev \
-            cmake \
-            libssl-dev \
-            autoconf-archive \
-            git \
-            wget \
-            curl \
-            gcc \
-            g++ \
-            make \
-            file \
-            python3-distutils
+            python3-pip python3-venv python3-dev \
+            zip unzip openjdk-17-jdk openjdk-17-jre-headless \
+            autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            libfreetype6-dev libpng-dev libffi-dev liblzma-dev \
+            cmake libssl-dev autoconf-archive \
+            git wget curl gcc g++ make file
 
       - name: Install Buildozer
         run: |
           python3 -m pip install --upgrade pip setuptools wheel
-          pip install buildozer==1.5.0 cython==3.0.0
-
-      - name: Set version from input
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          VERSION="${{ github.event.inputs.version }}"
-          sed -i "s/^version = .*/version = $VERSION/" buildozer.spec
-
-      - name: Pre-create buildozer android dir
-        run: |
-          mkdir -p .buildozer/android/platform/python-for-android
-          echo "Pre-created buildozer dirs"
+          pip install buildozer cython
 
       - name: Build APK
         run: |
-          # Set environment
           export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk-latest
-          
-          # Run buildozer
           buildozer android debug
-        timeout-minutes: 60
-        env:
-          DEBIAN_FRONTEND: noninteractive
+        timeout-minutes: 90
 
-      - name: List build output
-        if: always()
-        run: |
-          echo "=== Build Output ==="
-          ls -lh .bin/ 2>/dev/null || echo "No .bin directory"
-          find . -name "*.apk" -type f 2>/dev/null -exec ls -lh {} \; || echo "No APK found"
-          
-          echo "=== Buildozer Log (last 100 lines) ==="
-          tail -100 .buildozer/log.txt 2>/dev/null || echo "No log file"
-
-      - name: Upload APK artifact
-        if: hashFiles('.bin/*.apk') != ''
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: nettest-apk
-          path: .bin/*.apk
+          path: bin/*.apk
           retention-days: 30
 
-      - name: Upload build log on failure
+      - name: Upload log on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -140,13 +71,12 @@ jobs:
           path: .buildozer/log.txt
 
       - name: Create Release
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        if: success() && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
-          files: .bin/*.apk
+          files: bin/*.apk
           tag_name: apk-${{ github.run_number }}
-          name: "Network Test Tool APK #${{ github.run_number }}"
+          name: "APK #${{ github.run_number }}"
           draft: false
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
