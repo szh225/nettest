@@ -11,7 +11,6 @@ version = 1.0.0
 requirements = python3,kivy
 
 android.minapi = 21
-android.api = 33
 android.ndk = 22b
 android.archs = armeabi-v7a
 android.use_androidx = True

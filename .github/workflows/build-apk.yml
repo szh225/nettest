@@ -46,6 +46,29 @@ jobs:
           pip install buildozer==1.5.0 cython
           python3 patch_buildozer.py
 
+      - name: Pre-install Android SDK platform
+        run: |
+          SDK_DIR="$HOME/.buildozer/android/platform/android-sdk"
+          mkdir -p "$SDK_DIR/cmdline-tools/latest"
+          
+          cd /tmp
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -O cmdline.zip
+          unzip -q cmdline.zip
+          cp -r cmdline-tools/* "$SDK_DIR/cmdline-tools/latest/"
+          rm -rf cmdline-tools cmdline.zip
+          
+          export ANDROID_HOME="$SDK_DIR"
+          export PATH="$SDK_DIR/cmdline-tools/latest/bin:$PATH"
+          export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
+          
+          yes | sdkmanager --licenses > /dev/null 2>&1
+          sdkmanager "platforms;android-33" "platform-tools" "build-tools;33.0.1"
+          
+          echo "=== Installed platforms ==="
+          ls "$SDK_DIR/platforms/"
+          echo "=== Installed build-tools ==="
+          ls "$SDK_DIR/build-tools/"
+
       - name: Build APK
         env:
           JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
