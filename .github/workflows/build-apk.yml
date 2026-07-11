@@ -43,7 +43,7 @@ jobs:
       - name: Install buildozer and patch
         run: |
           pip install --upgrade pip setuptools wheel
-          pip install buildozer==1.5.0
+          pip install buildozer==1.5.0 cython
           python3 patch_buildozer.py
 
       - name: Build APK
