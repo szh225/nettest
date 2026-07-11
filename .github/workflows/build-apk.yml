@@ -1,0 +1,114 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - '*.py'
+      - '*.kv'
+      - 'buildozer.spec'
+      - '.github/workflows/*.yml'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'App version (e.g., 1.0.0)'
+        required: false
+        default: '1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build APK with Buildozer
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache Buildozer directory
+        uses: actions/cache@v4
+        with:
+          path: .buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
+
+      - name: Cache Android SDK
+        uses: actions/cache@v4
+        with:
+          path: ~/.buildozer/android/platform
+          key: ${{ runner.os }}-android-sdk-${{ hashFiles('buildozer.spec') }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pip \
+            python3-venv \
+            zip \
+            unzip \
+            openjdk-17-jdk \
+            autoconf \
+            libtool \
+            pkg-config \
+            zlib1g-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            libfreetype6-dev \
+            libpng-dev \
+            libffi-dev \
+            liblzma-dev \
+            cmake \
+            libssl-dev \
+            autoconf-archive
+
+      - name: Install Buildozer
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython
+
+      - name: Set version from input
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          sed -i "s/^version = .*/version = $VERSION/" buildozer.spec
+
+      - name: Build APK
+        run: |
+          buildozer android debug
+        env:
+          ANDROID_HOME: ${{ runner.temp }}/android
+
+      - name: List build output
+        run: |
+          echo "=== Build Output ==="
+          ls -lh .bin/ || echo "No .bin directory"
+          find . -name "*.apk" -type f -exec ls -lh {} \;
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nettest-apk
+          path: .bin/*.apk
+          retention-days: 30
+
+      - name: Create Release
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: .bin/*.apk
+          tag_name: apk-${{ github.run_number }}
+          name: "Network Test Tool APK #${{ github.run_number }}"
+          draft: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

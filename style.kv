@@ -1,0 +1,103 @@
+# 网络测试工具 - KV 样式文件
+# 定义全局样式和主题
+
+#:kivy 2.2.0
+
+# 全局颜色变量
+#:set PRIMARY_COLOR     0.2, 0.6, 1.0, 1    # 蓝色
+#:set SUCCESS_COLOR     0.2, 0.8, 0.2, 1    # 绿色
+#:set ERROR_COLOR       1.0, 0.3, 0.3, 1    # 红色
+#:set WARNING_COLOR     1.0, 0.8, 0.2, 1    # 橙色
+#:set BG_DARK           0.12, 0.12, 0.14, 1 # 深色背景
+#:set BG_LIGHT          0.95, 0.95, 0.97, 1 # 浅色背景
+#:set TEXT_DARK         0.9, 0.9, 0.9, 1    # 深色文字
+#:set TEXT_LIGHT        0.2, 0.2, 0.2, 1    # 浅色文字
+
+# TabbedPanel 样式
+<TabbedPanel>:
+    background_color: 0.2, 0.2, 0.25, 1
+    tab_width: self.texture_size[0] + 40
+
+<TabbedPanelItem>:
+    canvas.before:
+        Color:
+            rgba: 0.15, 0.15, 0.18, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<TabbedPanel>:
+    canvas.before:
+        Color:
+            rgba: 0.1, 0.1, 0.12, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+# 按钮样式
+<Button>:
+    background_color: 0.2, 0.6, 1.0, 0.8
+    color: 1, 1, 1, 1
+    font_size: '16sp'
+    bold: True
+    
+    canvas.before:
+        Color:
+            rgba: self.background_color if self.state == 'normal' else [0.4, 0.4, 0.4, 0.6]
+        Rectangle:
+            pos: self.pos
+            size: self.size
+            radius: [8]
+
+# TextInput 样式
+<TextInput>:
+    background_color: 0.2, 0.2, 0.25, 0.9
+    foreground_color: 1, 1, 1, 1
+    hint_text_color: 0.5, 0.5, 0.5, 0.8
+    font_size: '16sp'
+    
+    canvas.before:
+        Color:
+            rgba: 0.25, 0.25, 0.3, 0.9
+        Rectangle:
+            pos: self.pos
+            size: self.size
+            radius: [6]
+
+# Label 样式
+<Label>:
+    color: 0.9, 0.9, 0.9, 1
+    font_size: '14sp'
+    halign: 'left'
+    valign: 'top'
+
+# ScrollView 样式
+<ScrollView>:
+    bar_width: 8
+    scroll_type: ['content']
+
+# ProgressBar 样式
+<ProgressBar>:
+    canvas.before:
+        Color:
+            rgba: 0.3, 0.3, 0.35, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+            radius: [4]
+    
+    canvas:
+        Color:
+            rgba: 0.2, 0.6, 1.0, 1
+        Rectangle:
+            pos: self.pos
+            size: int(self.width * self.value / self.max), self.height
+            radius: [4]
+
+# GridLayout 样式
+<GridLayout>:
+    spacing: 10
+
+# BoxLayout 样式
+<BoxLayout>:
+    spacing: 10
