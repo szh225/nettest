@@ -1,34 +1,61 @@
 """
 网络测试工具 - 主程序入口
-支持 Ping, Tracert, Telnet, SSH 测试
 """
-import traceback
+import os
 import sys
+import traceback
 
-from kivy.app import App
-from kivy.utils import platform
-from kivy.logger import Logger
+# Set up logging to file for debugging
+LOG_FILE = os.path.join(os.environ.get('HOME', '/'), 'nettest.log')
+
+def log(msg):
+    try:
+        with open(LOG_FILE, 'a') as f:
+            f.write(str(msg) + '\n')
+    except:
+        pass
+
+log("=== NetTest starting ===")
+log(f"Platform: {sys.platform}")
+log(f"Python: {sys.version}")
+
+try:
+    from kivy.utils import platform
+    log(f"Kivy platform: {platform}")
+except Exception as e:
+    log(f"Failed to import kivy.utils: {e}")
+    raise
+
+try:
+    from kivy.app import App
+    log("Kivy App imported successfully")
+except Exception as e:
+    log(f"Failed to import kivy.app: {e}")
+    log(traceback.format_exc())
+    raise
 
 
 class NetTestApp(App):
     def build(self):
+        log("NetTestApp.build() called")
         try:
-            Logger.info(f"NetTest: Starting on {platform}")
             from main_screen import MainScreen
+            log("MainScreen imported")
             self.title = 'NetTest'
             self.root = MainScreen()
-            Logger.info("NetTest: MainScreen created successfully")
+            log("MainScreen created, returning root")
             return self.root
         except Exception as e:
-            Logger.error(f"NetTest: Failed to build app: {e}")
-            Logger.error(traceback.format_exc())
+            log(f"build() failed: {e}")
+            log(traceback.format_exc())
             raise
 
 
 if __name__ == '__main__':
+    log("Starting main block")
     try:
         NetTestApp().run()
     except Exception as e:
-        print(f"FATAL: {e}")
-        print(traceback.format_exc())
-        sys.exit(1)
+        log(f"FATAL in main: {e}")
+        log(traceback.format_exc())
+        raise
