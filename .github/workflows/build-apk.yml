@@ -23,8 +23,8 @@ permissions:
 jobs:
   build-apk:
     name: Build APK with Buildozer
-    runs-on: ubuntu-latest
-    
+    runs-on: ubuntu-22.04
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,6 +34,15 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h /
+
       - name: Cache Buildozer directory
         uses: actions/cache@v4
         with:
@@ -41,12 +50,6 @@ jobs:
           key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
             ${{ runner.os }}-buildozer-
-
-      - name: Cache Android SDK
-        uses: actions/cache@v4
-        with:
-          path: ~/.buildozer/android/platform
-          key: ${{ runner.os }}-android-sdk-${{ hashFiles('buildozer.spec') }}
 
       - name: Install system dependencies
         run: |
@@ -69,11 +72,15 @@ jobs:
             liblzma-dev \
             cmake \
             libssl-dev \
-            autoconf-archive
+            autoconf-archive \
+            git \
+            wget \
+            curl \
+            python3-distutils
 
       - name: Install Buildozer
         run: |
-          pip install --upgrade pip
+          python3 -m pip install --upgrade pip setuptools wheel
           pip install buildozer cython
 
       - name: Set version from input
@@ -85,8 +92,7 @@ jobs:
       - name: Build APK
         run: |
           buildozer android debug
-        env:
-          ANDROID_HOME: ${{ runner.temp }}/android
+        timeout-minutes: 45
 
       - name: List build output
         run: |
