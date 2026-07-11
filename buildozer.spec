@@ -53,7 +53,7 @@ android.archs = arm64-v8a,armeabi-v7a
 android.use_androidx = True
 
 # (str) Orientation of the app
-orientation = portrait,userPortrait,userLandscape
+orientation = portrait
 
 # (bool) Allow to save camera images into a temporary (writable) folder
 android.allow_backup = True
