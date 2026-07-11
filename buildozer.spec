@@ -15,7 +15,6 @@ android.api = 33
 android.ndk = 22b
 android.archs = armeabi-v7a
 android.use_androidx = True
-android.skip_update = True
 orientation = portrait
 
 [buildozer]
